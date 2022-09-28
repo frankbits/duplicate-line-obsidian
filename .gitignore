@@ -1,18 +1,19 @@
-# Build and Release Folders
-bin-debug/
-bin-release/
-[Oo]bj/
-[Bb]in/
+# vscode
+.vscode 
 
-# Other files and folders
-.settings/
+# Intellij
+*.iml
+.idea
 
-# Executables
-*.swf
-*.air
-*.ipa
-*.apk
+# npm
+node_modules
 
-# Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
-# should NOT be excluded as they contain compiler settings and other important
-# information for Eclipse / Flash Builder.
+# Don't include the compiled main.js file in the repo.
+# They should be uploaded to GitHub releases instead.
+main.js
+
+# Exclude sourcemaps
+*.map
+
+# Exclude macOS Finder (System Explorer) View States
+.DS_Store
