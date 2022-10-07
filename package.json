@@ -1,7 +1,7 @@
 {
 	"name": "duplicate-line-obsidian",
-	"version": "1.0.0",
-	"description": "To duplicate a line",
+	"version": "1.0.1",
+	"description": "To duplicate a line and some other fonctions",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
