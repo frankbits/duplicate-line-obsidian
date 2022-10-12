@@ -1,6 +1,6 @@
 {
 	"name": "duplicate-line-obsidian",
-	"version": "1.0.1",
+	"version": "1.0.0",
 	"description": "To duplicate a line and some other fonctions",
 	"main": "main.js",
 	"scripts": {
