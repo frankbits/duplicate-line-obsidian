@@ -1,4 +1,4 @@
-# duplicate-line-obsidian
+# duplicate-line
  
 Command to duplicate a line
 

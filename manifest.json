@@ -1,10 +1,10 @@
 {
-	"id": "duplicate-line-obsidian",
-	"name": "Duplicate Line Obsidian",
+	"id": "duplicate-line",
+	"name": "Duplicate Line",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.9",
 	"description": "To duplicate a line",
-	"author": "Obsidian",
+	"author": "1C0D",
 	"authorUrl": "https://github.com/1C0D/duplicate-line",
 	"isDesktopOnly": false
 }
