@@ -1,4 +1,4 @@
-import { Plugin } from "obsidian";
+import { Editor, Plugin } from "obsidian";
 
 export default class WindowCollapse extends Plugin {
 	async onload() {
@@ -8,9 +8,8 @@ export default class WindowCollapse extends Plugin {
 			editorCallback: (editor) => this.duplicateLine(editor),
 		});
 	}
-
-	duplicateLine(editor) {
-		const { line: lineNumber, ch: column } = editor.getCursor();
+	duplicateLine(editor: Editor) {
+		const { line: lineNumber } = editor.getCursor();
 		const lineContent = editor.getLine(lineNumber);
 		if (!lineContent) {
 			return;
