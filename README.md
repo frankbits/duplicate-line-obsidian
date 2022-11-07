@@ -9,6 +9,6 @@ With this plugin you can dupplicate the line where the cursor is, whatever the s
 version 1.1:
 multicursor and multiline selection now supported (same behaviour as Visual Studio Code) 
 
-![demo](https://youtu.be/xOc97PDWyK4) 
+[demo](https://youtu.be/xOc97PDWyK4) 
 
 
