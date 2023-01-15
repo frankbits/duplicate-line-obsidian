@@ -1,6 +1,12 @@
 import { Editor, EditorSelectionOrCaret, Plugin } from "obsidian";
 
-export default class WindowCollapse extends Plugin {
+/**
+ * Plugin to duplicate lines in the editor.
+ */
+export default class DuplicateLine extends Plugin {
+	/**
+	 * Register the "duplicate-line" command when the plugin is loaded.
+	 */
 	async onload() {
 		this.addCommand({
 			id: "duplicate-line",
@@ -8,10 +14,17 @@ export default class WindowCollapse extends Plugin {
 			editorCallback: (editor) => this.duplicateLine(editor),
 		});
 	}
+
+	/**
+	 * Handle the logic for duplicating the selected lines.
+	 *
+	 * @param editor - The editor instance.
+	 */
 	duplicateLine(editor: Editor) {
-		const cursors = editor.listSelections(); //multicursors
+		const cursors = editor.listSelections(); // multicursors
 		let addedLines = 0;
 		const selections: EditorSelectionOrCaret[] = [];
+
 		cursors.forEach((cursor) => {
 			let lineContent = "";
 			let lineNumber = 0;
@@ -19,10 +32,11 @@ export default class WindowCollapse extends Plugin {
 			const anchor = cursor.anchor.line;
 			const headChar = cursor.head.ch;
 			const anchorChar = cursor.anchor.ch;
-			if (head == anchor) {
+			if (head === anchor) {
 				lineNumber = head + addedLines;
 				lineContent = editor.getLine(lineNumber);
-				if (!lineContent) {
+				if (!lineContent.trim()) {
+					// check if the line is empty
 					return;
 				}
 				addedLines++;
@@ -47,7 +61,6 @@ export default class WindowCollapse extends Plugin {
 				addedLines += linesRange + 1;
 
 				const lastLineContent = editor.getLine(lastLine);
-
 				const lineContent1 = lastLineContent + "\n" + totalContent;
 				editor.replaceRange(
 					lineContent1,
@@ -55,14 +68,14 @@ export default class WindowCollapse extends Plugin {
 					{ line: lastLine, ch: lastLineContent.length }
 				);
 			}
-			//to set selection back
 			selections.push({
+				//selection back
 				anchor: { line: anchor + addedLines, ch: anchorChar },
 				head: { line: head + addedLines, ch: headChar },
 			});
 		});
-		editor.setSelection({ line: 0, ch: 0 }, { line: 0, ch: 0 });//deselect all
-		editor.setSelections(selections);
+		if (selections.length > 0) {
+			editor.setSelections(selections);
+		}
 	}
 }
-
