@@ -1,7 +1,7 @@
 {
 	"id": "duplicate-line",
 	"name": "Duplicate Line",
-	"version": "1.1.0",
+	"version": "1.1.1",
 	"minAppVersion": "0.15.9",
 	"description": "To duplicate a line or several following selected lines. multicursor can be used too",
 	"author": "1C0D",
