@@ -1,14 +1,14 @@
-# duplicate-line
+# duplicate-line 1.2.0
  
-Command to duplicate a line or following selected lines
+Commands to duplicate line(s) down (or up)  
+
+you can use multicursor, selections are preserved    
+
+add your own shortcut as <kbd>Shift Ctrl ↓</kbd>   <kbd>Shift Ctrl ↑</kbd>
 
 By default, in obsidian, without any selection, you can press <kbd>Ctrl C</kbd> and then <kbd>Ctrl V</kbd> to dupplicate line where the cursor is. 
 
-With this plugin you can dupplicate the line where the cursor is, whatever the selection is and add your own shortcut as <kbd>Ctrl D</kbd> or <kbd>Shift Ctrl ↓</kbd> (as in Visual Studio Code) to do it
 
-version 1.1:
-multicursor and multiline selection now supported (same behaviour as Visual Studio Code) 
-
-[demo](https://youtu.be/xOc97PDWyK4) 
+[first demo](https://youtu.be/xOc97PDWyK4) 
 
 
