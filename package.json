@@ -1,7 +1,7 @@
 {
 	"name": "duplicate-line",
-	"version": "1.1.1",
-	"description": "To duplicate a line and some other fonctions",
+	"version": "1.2.0",
+	"description": "To duplicate line(s).Multicursor supported. duplicate down or up (set some shortcut)",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
