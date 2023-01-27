@@ -9,9 +9,14 @@ export default class DuplicateLine extends Plugin {
 	 */
 	async onload() {
 		this.addCommand({
-			id: "duplicate-line",
-			name: "Duplicate Line",
-			editorCallback: (editor) => this.duplicateLine(editor),
+			id: "duplicate-line", //old name to not loose shortcut
+			name: "Duplicate Line Down",
+			editorCallback: (editor) => this.duplicateLine(editor, 0),
+		});
+		this.addCommand({
+			id: "duplicate-line-up",
+			name: "Duplicate Line Up",
+			editorCallback: (editor) => this.duplicateLine(editor, 1),
 		});
 	}
 
@@ -19,19 +24,22 @@ export default class DuplicateLine extends Plugin {
 	 * Handle the logic for duplicating the selected lines.
 	 *
 	 * @param editor - The editor instance.
+	 * @param up - Indicates whether to duplicate the line up or down. 0 for down, 1 for up.
 	 */
-	duplicateLine(editor: Editor) {
+	duplicateLine = (editor: Editor, up: number): void => {
 		const cursors = editor.listSelections(); // multicursors
 		let addedLines = 0;
 		const selections: EditorSelectionOrCaret[] = [];
+		let multilineCursorCount = 0;
 
-		cursors.forEach((cursor) => {
+		for (const cursor of cursors) {
 			let lineContent = "";
 			let lineNumber = 0;
 			const head = cursor.head.line;
 			const anchor = cursor.anchor.line;
 			const headChar = cursor.head.ch;
 			const anchorChar = cursor.anchor.ch;
+
 			if (head === anchor) {
 				lineNumber = head + addedLines;
 				lineContent = editor.getLine(lineNumber);
@@ -46,36 +54,54 @@ export default class DuplicateLine extends Plugin {
 					{ line: lineNumber, ch: 0 },
 					{ line: lineNumber, ch: lineContent.length }
 				);
+				if (up) {
+					selections.push({
+						//selection back
+						head: { line: lineNumber, ch: headChar },
+						anchor: { line: lineNumber, ch: anchorChar },
+					});
+				}
 			} else {
+				multilineCursorCount++;
 				let totalContent = "";
-				const lastLine = Math.max(head, anchor) + addedLines;
-				const firstLine = Math.min(head, anchor) + addedLines;
-				const linesRange = Math.abs(head - anchor);
+				const startLine = Math.min(head, anchor) + addedLines;
+				const endLine = Math.max(head, anchor) + addedLines;
+				const selectedLines = endLine - startLine;
 
-				for (let i = 0; i <= linesRange; i++) {
-					const activeLine = firstLine + i;
-					lineContent = editor.getLine(activeLine);
-					if (i !== linesRange) totalContent += lineContent + "\n";
+				for (let i = startLine; i <= endLine; i++) {
+					lineContent = editor.getLine(i);
+					if (i !== endLine) totalContent += lineContent + "\n";
 					else totalContent += lineContent;
 				}
-				addedLines += linesRange + 1;
+				addedLines += selectedLines + 1;
 
-				const lastLineContent = editor.getLine(lastLine);
+				const lastLineContent = editor.getLine(endLine);
 				const lineContent1 = lastLineContent + "\n" + totalContent;
 				editor.replaceRange(
 					lineContent1,
-					{ line: lastLine, ch: 0 },
-					{ line: lastLine, ch: lastLineContent.length }
+					{ line: endLine, ch: 0 },
+					{ line: endLine, ch: lastLineContent.length }
 				);
+				// lineNumber = head + addedLines;
+				if (up) {
+					const offset =
+						multilineCursorCount > 1 ? selectedLines + 1 : 0;
+					selections.push({
+						//selection back
+						anchor: { line: anchor + offset, ch: anchorChar },
+						head: { line: head + offset, ch: headChar },
+					});
+				}
 			}
-			selections.push({
-				//selection back
-				anchor: { line: anchor + addedLines, ch: anchorChar },
-				head: { line: head + addedLines, ch: headChar },
-			});
-		});
-		if (selections.length > 0) {
-			editor.setSelections(selections);
+			if (!up) {
+				selections.push({
+					//selection back
+					anchor: { line: anchor + addedLines, ch: anchorChar },
+					head: { line: head + addedLines, ch: headChar },
+				});
+			}
 		}
-	}
+
+		editor.setSelections(selections);
+	};
 }
