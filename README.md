@@ -1,4 +1,4 @@
-# duplicate-line 1.2.0
+# duplicate-line(s)
  
 Commands to duplicate line(s) down (or up)  
 
