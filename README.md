@@ -9,6 +9,7 @@ add your own shortcut as <kbd>Shift Ctrl ↓</kbd>   <kbd>Shift Ctrl ↑</kbd>
 By default, in obsidian, without any selection, you can press <kbd>Ctrl C</kbd> and then <kbd>Ctrl V</kbd> to dupplicate line where the cursor is. 
 
 
-[first demo](https://youtu.be/xOc97PDWyK4) 
+![demo](./duplicateLine.gif) 
+
 
 
