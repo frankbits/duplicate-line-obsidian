@@ -1,6 +1,6 @@
 {
 	"name": "duplicate-line",
-	"version": "1.4.0",
+	"version": "1.4.1",
 	"description": "To duplicate line(s).Multicursor supported. duplicate down or up (set some shortcut)",
 	"main": "main.js",
 	"scripts": {

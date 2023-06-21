@@ -198,7 +198,10 @@ export default class DuplicateLine extends Plugin {
 			};
 			return newSelection;
 		} else {
-			return selection;
+			return {
+				anchor: editor.getCursor("from"),
+				head: editor.getCursor("to"),
+			};
 		}
 	}
 }
