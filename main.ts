@@ -1,10 +1,13 @@
 import {
+	App,
 	Editor,
 	EditorChange,
 	EditorRange,
 	EditorSelection,
 	EditorTransaction,
 	Plugin,
+	PluginSettingTab,
+	Setting,
 } from "obsidian";
 import { sortBy } from "lodash";
 
@@ -15,11 +18,20 @@ enum Direction {
 	Right,
 }
 
-/**
- * Plugin to duplicate lines in the editor.
- */
+interface dupliSettings {
+	addSpaceBetween: boolean;
+}
+
+const DEFAULT_SETTINGS: dupliSettings = {
+	addSpaceBetween: true,
+};
+
 export default class DuplicateLine extends Plugin {
+	settings: dupliSettings
 	async onload() {
+		await this.loadSettings();
+		this.addSettingTab(new DuplicateLineSettings(this.app, this));
+
 		this.addCommand({
 			id: "duplicate-line",
 			name: "Duplicate Line Down",
@@ -46,6 +58,17 @@ export default class DuplicateLine extends Plugin {
 		});
 	}
 
+	async loadSettings() {
+		this.settings = {
+			... await this.loadData(),
+			DEFAULT_SETTINGS
+		}
+	}
+
+	async saveSettings() {
+		await this.saveData(this.settings);
+	}
+
 	duplicateLine = (editor: Editor, direction: Direction): void => {
 		const selections = editor.listSelections();
 		let addedLines = 0;
@@ -60,7 +83,7 @@ export default class DuplicateLine extends Plugin {
 			);
 			const rangeLine = this.selectionToRange(newSelection); //already sorted
 			const numberOfLines = rangeLine.to.line - rangeLine.from.line + 1;
-			const content = editor.getRange(rangeLine.from, rangeLine.to);
+			let content = editor.getRange(rangeLine.from, rangeLine.to);
 			if (!content.trim()) continue;
 
 			let change: EditorChange;
@@ -72,7 +95,7 @@ export default class DuplicateLine extends Plugin {
 				line: 0,
 				ch: 0,
 			};
-
+			
 			switch (direction) {
 				case Direction.Down:
 					addedLines += numberOfLines;
@@ -115,6 +138,7 @@ export default class DuplicateLine extends Plugin {
 					break;
 
 				case Direction.Left: {
+					if (this.settings.addSpaceBetween) content = content + " "  
 					newAnchor = {
 						line: selection.anchor.line,
 						ch: selection.anchor.ch,
@@ -132,6 +156,7 @@ export default class DuplicateLine extends Plugin {
 				}
 
 				case Direction.Right: {
+					if (this.settings.addSpaceBetween) content = " " + content 
 					newAnchor = {
 						line: selection.anchor.line,
 						ch: selection.anchor.ch+content.length,
@@ -198,10 +223,57 @@ export default class DuplicateLine extends Plugin {
 			};
 			return newSelection;
 		} else {
+			// no selection (testing word before cursor)
+			if (range.from.line === range.to.line && range.from.ch === range.to.ch) {
+				const line = range.from.line
+				const ch = range.from.ch
+				if (ch > 0) {
+					const currentLine = editor.getLine(line)
+					// find previous word (thks GPT)
+					let startOfWord = ch - 1;
+					while (startOfWord >= 0 && /\S/.test(currentLine[startOfWord])) {
+						startOfWord--;
+					}
+					startOfWord++;
+					// extract previous word
+					const contentLength = currentLine.slice(startOfWord, ch).length;
+					const newSelection: EditorSelection =  {
+						anchor: { line: line, ch: (ch - contentLength) },
+						head: { line: line, ch: (ch) },
+					};
+					return newSelection
+				}
+				
+			} 
 			return {
 				anchor: editor.getCursor("from"),
 				head: editor.getCursor("to"),
 			};
 		}
+	}
+}
+
+class DuplicateLineSettings extends PluginSettingTab {
+	constructor(app: App, public plugin: DuplicateLine) {
+		super(app, plugin);
+		this.plugin = plugin;
+	}
+
+	display(): void {
+		const { containerEl } = this;
+		containerEl.empty();
+		containerEl.createEl('h2', { text: 'Duplicate Line' });
+
+		new Setting(containerEl)
+			.setName("Add a space before right duplication")
+			.setDesc("eg: 'xyz xyz, to avoid to have to insert a space")
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.addSpaceBetween)
+					.onChange((value) => {
+						this.plugin.settings.addSpaceBetween = value;
+						this.plugin.saveSettings();
+					})
+			});
 	}
 }
