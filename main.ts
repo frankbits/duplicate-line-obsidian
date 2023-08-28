@@ -18,59 +18,74 @@ enum Direction {
 	SelUp,
 	Left,
 	Right,
+	RightDown,
 }
 
 interface dupliSettings {
 	addSpaceBetween: boolean;
+	lineDown: boolean;
+	lineUP: boolean;
+	moveRight: boolean;
+	moveLeft: boolean;
+	selectionUp: boolean;
+	selectionDown: boolean;
+	mixRightDown: boolean
 }
 
 const DEFAULT_SETTINGS: dupliSettings = {
 	addSpaceBetween: true,
+	lineDown: true,
+	lineUP: true,
+	moveRight: true,
+	moveLeft: true,
+	selectionUp: true,
+	selectionDown: true,
+	mixRightDown: false,
 };
 
+interface CommandConfig {
+	id: string;
+	name: string;
+	direction: Direction;
+	condition: boolean;
+}
 export default class DuplicateLine extends Plugin {
 	settings: dupliSettings
+	newDirection: Direction | null
+
 	async onload() {
 		await this.loadSettings();
 		this.addSettingTab(new DuplicateLineSettings(this.app, this));
+		this.createCommandsFromSettings() 
+	}
 
-		this.addCommand({
-			id: "duplicate-line",
-			name: "Duplicate Line Down",
-			editorCallback: (editor) =>
-				this.duplicateLine(editor, Direction.Down),
+	createCommandsFromSettings() {
+		const commandsToCreate: Array<CommandConfig> = [
+			{ id: "duplicate-line", name: "Duplicate Line Down", direction: Direction.Down, condition: this.settings.lineDown },
+			{ id: "duplicate-line-up", name: "Duplicate Line Up", direction: Direction.Up, condition: this.settings.lineUP },
+			{ id: "duplicate-selection-down", name: "Duplicate Selection Down", direction: Direction.SelDown, condition: this.settings.selectionDown },
+			{ id: "duplicate-selection-up", name: "Duplicate Selection Up", direction: Direction.SelUp, condition: this.settings.selectionUp },
+			{ id: "duplicate-line-right", name: "Duplicate Selection Right", direction: Direction.Right, condition: this.settings.moveRight },
+			{ id: "duplicate-line-left", name: "Duplicate Selection Left", direction: Direction.Left, condition: this.settings.moveLeft },
+			{ id: "duplicate-line-right-down", name: "Duplicate Selection Right Line Down", direction: Direction.RightDown, condition: this.settings.mixRightDown }
+		];
+
+		commandsToCreate.forEach(commandConfig => {
+			this.addCommand({
+				id: commandConfig.id,
+				name: commandConfig.name,
+				editorCheckCallback: (checking: boolean, editor) => {
+					console.log("commandConfig.condition", commandConfig.condition)
+					if (commandConfig.condition) {
+						if (!checking) {
+							this.duplicateLine(editor, commandConfig.direction)
+						}
+						return true;
+					}
+					return false;
+				}
+			});
 		});
-		this.addCommand({
-			id: "duplicate-line-up",
-			name: "Duplicate Line Up",
-			editorCallback: (editor) =>
-				this.duplicateLine(editor, Direction.Up),
-		});
-		this.addCommand({
-			id: "duplicate-selection-down",
-			name: "Duplicate Selection Down",
-			editorCallback: (editor) =>
-				this.duplicateLine(editor, Direction.SelDown),
-		});
-		this.addCommand({
-			id: "duplicate-selection-up",
-			name: "Duplicate Selection Up",
-			editorCallback: (editor) =>
-				this.duplicateLine(editor, Direction.SelUp),
-		});
-		this.addCommand({
-			id: "duplicate-line-right",
-			name: "Duplicate Line Right",
-			editorCallback: (editor) =>
-				this.duplicateLine(editor, Direction.Right),
-		});
-		// useless
-		// this.addCommand({ 
-		// 	id: "duplicate-line-left",
-		// 	name: "Duplicate Line Left",
-		// 	editorCallback: (editor) =>
-		// 		this.duplicateLine(editor, Direction.Left),
-		// });
 	}
 
 	async loadSettings() {
@@ -85,10 +100,16 @@ export default class DuplicateLine extends Plugin {
 	}
 
 	duplicateLine = (editor: Editor, direction: Direction): void => {
-		const selections = editor.listSelections();
+		let selections = editor.listSelections();
 		let addedLines = 0;
 		const changes: EditorChange[] = [];
 		const newSelectionRanges: EditorRange[] = [];
+
+		// if (direction === Direction.RightDown) {
+		// 	selections = [{ anchor: editor.getCursor(), head: editor.getCursor() },]
+		// }
+
+		// bug outside of doc 
 
 		for (let selection of selections) {
 			const newSelection = this.selectionToLine(
@@ -96,9 +117,8 @@ export default class DuplicateLine extends Plugin {
 				selection,
 				direction
 			);
-			console.debug("newSelection", newSelection)
+console.log("selection", selection)
 			const rangeLine = this.selectionToRange(newSelection, true); //already sorted
-			console.debug("rangeLine", rangeLine)
 			const numberOfLines = rangeLine.to.line - rangeLine.from.line + 1;
 			let content = editor.getRange(rangeLine.from, rangeLine.to);
 			if (!content.trim()) continue;
@@ -113,6 +133,10 @@ export default class DuplicateLine extends Plugin {
 				ch: 0,
 			};
 
+			if (this.newDirection) {
+				direction = this.newDirection
+				this.newDirection = null
+			}
 			switch (direction) {
 				case Direction.Down:
 					addedLines += numberOfLines;
@@ -222,21 +246,51 @@ export default class DuplicateLine extends Plugin {
 					const condition = this.areObjectsEqual(selection.head, rangeLine.to)
 					const NewrangeLineFrom = { line: rangeLine.from.line, ch: 0 }
 					newAnchor = {
-						line: selection.anchor.line + addedLines-1,
+						line: selection.anchor.line + addedLines,
 						ch: condition ? 0 : Math.abs(selection.anchor.ch - selection.head.ch),
 					};
 					newHead = {
-						line: selection.head.line + addedLines-1,
+						line: selection.head.line + addedLines,
 						ch: condition ? Math.abs(selection.anchor.ch - selection.head.ch) : 0,
 					};
-					// newAnchor = {
-					// 	line: selection.anchor.line + addedLines,
-					// 	ch: selection.anchor.ch,
-					// };
-					// newHead = {
-					// 	line: selection.head.line + addedLines,
-					// 	ch: selection.head.ch,
-					// };
+					newAnchor = {
+						line: selection.anchor.line + addedLines,
+						ch: selection.anchor.ch,
+					};
+					newHead = {
+						line: selection.head.line + addedLines,
+						ch: selection.head.ch,
+					};
+
+					{
+						change = {
+							from: NewrangeLineFrom,
+							to: NewrangeLineFrom,
+							text: content + "\n",
+						};
+					}
+					break;
+				}
+				case Direction.RightDown: {
+					addedLines += numberOfLines;
+					const condition = this.areObjectsEqual(selection.head, rangeLine.to)
+					const NewrangeLineFrom = { line: rangeLine.from.line, ch: 0 }
+					newAnchor = {
+						line: selection.anchor.line + addedLines,
+						ch: condition ? 0 : Math.abs(selection.anchor.ch - selection.head.ch),
+					};
+					newHead = {
+						line: selection.head.line + addedLines,
+						ch: condition ? Math.abs(selection.anchor.ch - selection.head.ch) : 0,
+					};
+					newAnchor = {
+						line: selection.anchor.line + addedLines,
+						ch: selection.anchor.ch,
+					};
+					newHead = {
+						line: selection.head.line + addedLines,
+						ch: selection.head.ch,
+					};
 
 					{
 						change = {
@@ -292,21 +346,39 @@ export default class DuplicateLine extends Plugin {
 		direction: Direction
 	): EditorSelection {
 		const range = this.selectionToRange(selection, true); // {from:{line: 11, ch: 0} to:{line: 12...
-		const vertical: boolean =
-			direction === Direction.Up || direction === Direction.Down;
+		const vertical: boolean = direction === Direction.Up || direction === Direction.Down;
+		const isEmptySelection = (selection.anchor.ch === selection.head.ch) && (selection.anchor.line === selection.head.line);
+		const toLength = editor.getLine(range.to.line).length
+
 		if (vertical) {
-			const toLength = editor.getLine(range.to.line).length; // len line 12
 			const newSelection: EditorSelection = {
 				anchor: { line: range.from.line, ch: 0 },
 				head: { line: range.to.line, ch: toLength },
 			};
 			return newSelection;
+
 		} else if (direction === Direction.SelDown) {
 			return selection;
 		}
+		else if (direction === Direction.RightDown) {
+			if (isEmptySelection) {
+				const newSelection: EditorSelection = {
+					anchor: { line: range.to.line, ch: 0 },
+					head: { line: range.to.line, ch: toLength },
+				};
+				this.newDirection = Direction.Down
+				return newSelection
+			} else {
+				this.newDirection = Direction.Right
+				return {
+					anchor: range.from,
+					head: range.to,
+				};
+			}
+		}
 		else {
 			// no selection (testing word before cursor)
-			if (range.from.line === range.to.line && range.from.ch === range.to.ch) {
+			if (isEmptySelection) {
 				const line = range.from.line
 				const ch = range.from.ch
 				if (ch > 0) {
@@ -335,6 +407,7 @@ export default class DuplicateLine extends Plugin {
 	}
 }
 
+
 class DuplicateLineSettings extends PluginSettingTab {
 	constructor(app: App, public plugin: DuplicateLine) {
 		super(app, plugin);
@@ -357,5 +430,21 @@ class DuplicateLineSettings extends PluginSettingTab {
 						this.plugin.saveSettings();
 					})
 			});
+
+		const settingsToConfigure: Array<keyof dupliSettings> = ['lineDown', 'lineUP', 'moveRight', 'moveLeft', 'selectionUp', 'selectionDown', 'mixRightDown'];
+
+		settingsToConfigure.forEach(settingName => {
+			new Setting(containerEl)
+				.setName(`duplicate ${settingName}`)
+				.addToggle((toggle) => {
+					toggle
+						.setValue(this.plugin.settings[settingName])
+						.onChange((value) => {
+							this.plugin.settings[settingName] = value;
+							this.plugin.createCommandsFromSettings()
+							this.plugin.saveSettings();
+						});
+				});
+		});
 	}
 }
